@@ -183,7 +183,7 @@ clean :
 
 .PHONY关键字表示这是一个伪目标(后面会细讲)而不是某个文件的名字， -rm前面的“-”表示即使rm执行出错，也继续执行。
 
-当我们执行make的时候，clean不会自动执行，因为它不是任何target的依赖。当我们想执行clean的时候，我们可以再执行的时候加上参数：
+当我们执行make的时候，clean不会自动执行，因为它不是任何target的依赖。当我们想执行clean的时候，我们可以在执行的时候加上参数：
 
 ```
 make clean
@@ -191,9 +191,35 @@ make clean
 
 ## 编写Makefile
 
+### Makefile包含哪些内容
+
+- 显示规则: 定义target, target依赖的文件及其要执行的recipe.
+- 隐式规则: makefile根据target名字的自动推导功能. 比如main.o可以自动推导出依赖文件main.c和recipe: cc -c main.c -o main.o
+- 变量定义: 把字符串赋值给一个变量
+- 指令: 包含3个部分:1. include其他makefile; 2. 使用条件判断来决定执行makefile的哪部分代码; 3. 定义一个包含多行字符串的变量.
+- 注释: 用#开头
+
+### Makefile如何命名
+
+默认情况下make指令会按照下面的顺序来寻找
+
+1. GNUmakefile
+2. makefile
+3. Makefile
+
+一般推荐使用Makefile作为名字.
+
+也可以用"-f"或者"--file"来指定任意文件作为makefile:
+
+```
+make -f customize_makefile
+```
+
 
 
 ## 编写规则
+
+
 
 ## 规则中的命令
 
