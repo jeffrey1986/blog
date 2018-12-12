@@ -129,8 +129,6 @@ sudo apt install privoxy
 打开/etc/privoxy/config文件,在文件末尾添加:
 
 ```
-listen-address  127.0.0.1:8118
-listen-address  [::1]:8118
 forward-socks5t / 127.0.0.1:1080
 ```
 
