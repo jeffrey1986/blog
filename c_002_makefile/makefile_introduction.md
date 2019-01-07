@@ -89,7 +89,6 @@ make clean
 
   target是clean，这不是要生成的文件名，它只是一个动作的名字，recipe是删除当前文件夹下面的edit和.o文件。它没有依赖，也不是其他任何target的依赖，这个规则的唯一目的就是执行recipe中的指令。这类target我们称之为“伪目标(phony targets)”，这个将在后面的章节中详细介绍。
 
-  
 
 ## make如何执行
 
@@ -219,7 +218,86 @@ make -f customize_makefile
 
 ## 编写规则
 
+### 规则示例
+```
+foo.o : foo.c defs.h       # module for twiddling the frobs
+        cc -c -g foo.c
+```
+该规则告诉我们两件事：
+1. 何时该更新foo.o：当foo.o不存在或者它的依赖文件（foo.c defs.h）比它新时。
+2. 如何更新foo.o：cc -c -g foo.c
+### 规则语法
+一般情况下，规则语法如下：
+```
+targets : prerequisites
+        recipe
+        …
+```
+或者：
+```
+targets : prerequisites ; recipe
+        recipe
+        …
+```
+- targets可以有多个，以空格分开
+- recipe必须以tab开始
+- $为特殊符号，一般用在变量开始，如果需要一个$符号，那么需要这样写$$
+- 如果一行太长，可以在行尾加 \，然后新起一行，这两行会被当做一行
+### 依赖种类
+依赖可以分为普通依赖和纯指令依赖。纯指令依赖在执行后，并不会强制target更新，比如创建一个文件夹等。两种依赖以“|”分隔，左边为普通依赖，右边为纯指令依赖。
+### 在文件名中适用通配符
+#### 示例
+在recipe中使用通配符：
+```
+clean:
+        rm -f *.o
+```
+在依赖中使用通配符：
+```
+print: *.c
+        lpr -p $?
+        touch print
+```
+错误的用法：
+```
+objects = *.o
+```
+正确的用法应该为：
+```
+objects := $(wildcard *.o)
+```
+#### 函数wildcard
+格式：
+```
+$(wildcard pattern…)
+```
+示例
+```
+$(wildcard *.c)
+```
+```
+$(patsubst %.c,%.o,$(wildcard *.c))
+```
+```
+objects := $(patsubst %.c,%.o,$(wildcard *.c))
 
+foo : $(objects)
+        cc -o foo $(objects)
+```
+### 为依赖文件搜索文件夹
+#### VPATH
+- make会在当前文件夹和VPATH指定的文件夹搜索依赖文件或者目标文件；
+- VPATH指定的路径用冒号或者空格分开；
+- make会按照指定的VPATH中指定的顺序来搜索；
+- VPATH是全局的。
+示例：
+```
+VPATH = src:../headers
+```
+make会从src和../headers中去搜索文件。
+#### vpath指令
+
+### 伪目标 - Phony Targets
 
 ## 规则中的命令
 
