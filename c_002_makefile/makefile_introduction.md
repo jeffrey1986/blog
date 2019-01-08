@@ -288,8 +288,7 @@ foo : $(objects)
 #### VPATH
 - make会在当前文件夹和VPATH指定的文件夹搜索依赖文件或者目标文件；
 - VPATH指定的路径用冒号或者空格分开；
-- make会按照指定的VPATH中指定的顺序来搜索；
-- VPATH是全局的。
+- make会按照指定的VPATH中指定的顺序来搜索。
 示例：
 ```
 VPATH = src:../headers
@@ -297,7 +296,78 @@ VPATH = src:../headers
 make会从src和../headers中去搜索文件。
 #### vpath指令
 
+vpath和VPATH的区别在于，vpath可以指定搜索指定类型的文件，比如只搜索以.c结尾的文件。
+
+vpath有三种使用方法：
+
+1. vpath pattern directories
+
+   在directories文件夹下，搜索符合pattern格式的文件。
+2. vpath pattern
+   清除符合pattern格式的搜索。
+3. vpath
+   清除前面所有通过vpath指定的搜索。
+示例：
+```
+vpath %.h ../headers
+```
+在../headers文件夹中搜寻以.h结尾的文件。
+```
+vpath %.c src1:src2
+```
+先在src1文件夹然后在src2文件夹中搜寻以.c结尾的文件。
+
+不管是VPATH还是vpath，都是针对target或者prerequisites，和gcc编译时候的-I路径无关。
+#### 文件夹搜索场景下编写recipes
+```
+foo.o : foo.c
+        cc -c $(CFLAGS) $^ -o $@
+```
+[todo: need to verify]假设foo.c在另外一个目录src1里面，那么它的路径真实路径为src1/foo.c, 在写recipe的时候，我们无法知道foo.c的真实路径，如果这个时候我们继续用foo.c的话，会出现找不到文件的错误。那么这个时候我们就需要引入"$"这个关键字。比如"$^"表示所有prerequisites的列表，"$@"表示target，这样即使foo.c在src1里面，"$^"也能够保证make能找到该文件。
 ### 伪目标 - Phony Targets
+伪目标不同于普通的target，它并不是一个文件名字，它可能只是一个指令，比如删除某些文件，或者创建文件夹，等等。使用伪目标有两个好处：
+1. 避免和真实的文件冲突；
+2. 提高效率
+假设有这样一个用来删除某些文件的指令：
+```
+clean:
+        rm *.o temp
+```
+[todo: need to verify]我们的预期是每次执行 make clean的时候，就调用 rm \*.o tmp 指令。但是这个规则有一个风险：如果存在clean这样一个文件，该规则又没有任何依赖，那么make会认为clean是最新的，所以就不需要执行，这样就与我们的预期不符了。所以这就需要用伪目标来解决这类问题。
+看一个伪目标的例子：
+```
+.PHONY: clean
+clean:
+        rm *.o temp
+```
+.PHONY是make预留的关键字，作为target时，系统会知道这是一个伪目标。
+### 静态模式规则
+静态模式规则指定多个target，并且可以根据名字为target的推导出所需的依赖。
+#### 静态模式规则语法
+```
+targets …: target-pattern: prereq-patterns …
+        recipe
+        …
+```
+示例：
+```
+objects = foo.o bar.o
+
+all: $(objects)
+
+$(objects): %.o: %.c
+        $(CC) -c $(CFLAGS) $< -o $@
+```
+"$<"表示prerequisite， "$@"表示target。$(objects)中的每一个target，都应该满足target-pattern, 也就是%.o这种格式，如果不能满足，则需要用filter过滤下，比如下面的例子：
+```
+files = foo.elc bar.o lose.o
+
+$(filter %.o,$(files)): %.o: %.c
+        $(CC) -c $(CFLAGS) $< -o $@
+$(filter %.elc,$(files)): %.elc: %.el
+        emacs -f batch-byte-compile $<
+```
+#### 静态模式规则 vs 隐式规则
 
 ## 规则中的命令
 
